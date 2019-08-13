@@ -2,7 +2,7 @@
 drop table associations;
 
 create table associations(GHid varchar,
-                          symbol char(32),
+                          symbol varchar,
 			  eqtl_score numeric,
 			  erna_score numeric,
 			  chic_score numeric,

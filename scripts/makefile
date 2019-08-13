@@ -1,6 +1,12 @@
 default:
 	@echo create.elements create.associations
 
+all: create.all fill.all
+
+create.all: create.elements create.associations create.tfbs create.tissues
+
+fill.all: fill.elements fill.associations fill.tfbs fill.tissues
+
 create.elements:
 	(export PGPASSWORD=trena; psql -h khaleesi -U trena gh411 -f createElementsTable.sql)
 

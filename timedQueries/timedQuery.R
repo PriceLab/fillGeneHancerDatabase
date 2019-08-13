@@ -9,3 +9,52 @@ dbGetQuery(db, "select * from tfbs limit 4")
 dbGetQuery(db, "select count(*) from tissues where tissue='placenta'")   # 31992
 dbGetQuery(db, "select count(*) from tissues where tissue='brain'")      # 626
 tbl.tissue <- dbGetQuery(db, "select * from tissues limit 1000000")      # 626
+
+
+query <- paste0("select * from associations AS a, tissues AS t, elements as e ",
+                "where a.symbol='FOXO6' ",
+                "AND t.tissue in ('placenta','Placenta') ",
+                "AND a.ghid=t.ghid ",
+                "AND e.ghid=a.ghid")
+
+query <- paste0("select a.symbol as gene, ",
+                "e.chr as chrom, ",
+                "e.element_start as start, ",
+                "e.element_end as end, ",
+                "a.eqtl_score as eqtl, ",
+                "a.chic_score as HiC, ",
+                "a.erna_score as erna, ",
+                "a.expression_score as coexpression, ",
+                "a.distance_score as distanceScore, ",
+                "a.tss_proximity as tssProximity, ",
+                "a.combined_score as combinedScore, ",
+                "a.is_elite as elite, ",
+                "t.source as source, ",
+                "t.tissue as tissue, ",
+                "e.type as type, ",
+                "a.ghid as ghid ",
+                "from associations AS a, ",
+                "tissues AS t, elements as e ",
+                "where a.symbol='FOXO6' ",
+                "AND t.tissue in ('placenta','Placenta') ",
+                "AND a.ghid=t.ghid ",
+                "AND e.ghid=a.ghid")
+
+system.time(tbl <- dbGetQuery(db, query))
+tbl$sig <- with(tbl, sprintf("%s:%d-%d", chrom, start, end))
+which(duplicated(tbl$sig))
+tbl <- tbl[-which(duplicated(tbl$sig)),]
+subset(tbl, !(is.nan(eqtl) & is.nan(hic)))
+
+#--------------------------------------------------------------------------------
+#  21 regions.  alison asserts that DLX3 regulates FOXO6.  
+#  it is a weak test, only for plausibility: do we find an unusual number of 
+#  binding sites for DLX3 in these regions?
+#--------------------------------------------------------------------------------
+library(MotifDb)
+library(trena)
+mm <- MotifMatcher("hg38", pfms=as.list(query(MotifDb, c("DLX3", "sapiens", "hocomoco"))))
+findMatchesByChromosomalRegion(mm, tbl[, c("chrom", "start", "end")], 85)
+
+
+

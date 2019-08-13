@@ -2,7 +2,7 @@
 drop table tfbs;
 
 create table tfbs(GHid varchar,
-                  tf char(32),
+                  tf varchar,
 		  tissues varchar
 		   );
 
