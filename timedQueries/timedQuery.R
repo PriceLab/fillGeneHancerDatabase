@@ -10,6 +10,9 @@ dbGetQuery(db, "select count(*) from tissues where tissue='placenta'")   # 31992
 dbGetQuery(db, "select count(*) from tissues where tissue='brain'")      # 626
 tbl.tissue <- dbGetQuery(db, "select * from tissues limit 1000000")      # 626
 
+all.tissues <- dbGetQuery(db, "select distinct tissue from tissues")$tissue
+length(all.tissues)  # 310
+
 
 query <- paste0("select * from associations AS a, tissues AS t, elements as e ",
                 "where a.symbol='FOXO6' ",
@@ -47,14 +50,40 @@ tbl <- tbl[-which(duplicated(tbl$sig)),]
 subset(tbl, !(is.nan(eqtl) & is.nan(hic)))
 
 #--------------------------------------------------------------------------------
-#  21 regions.  alison asserts that DLX3 regulates FOXO6.  
-#  it is a weak test, only for plausibility: do we find an unusual number of 
+#  21 regions.  alison asserts that DLX3 regulates FOXO6.
+#  it is a weak test, only for plausibility: do we find an unusual number of
 #  binding sites for DLX3 in these regions?
 #--------------------------------------------------------------------------------
 library(MotifDb)
 library(trena)
+pwm <- as.list(query(MotifDb, c("DLX3", "sapiens", "hocomoco")))
 mm <- MotifMatcher("hg38", pfms=as.list(query(MotifDb, c("DLX3", "sapiens", "hocomoco"))))
-findMatchesByChromosomalRegion(mm, tbl[, c("chrom", "start", "end")], 85)
+tbl.dlx3 <- findMatchesByChromosomalRegion(mm, tbl[, c("chrom", "start", "end")], 85)
+
+tbl.full.region <- data.frame(chrom="chr1", start=40908542, end=41437415, stringsAsFactors=FALSE)
+
+tbl.dlx3.all <- findMatchesByChromosomalRegion(mm, tbl.full.region, 85)
+
+#--------------------------------------------------------------------------------
+#
+#--------------------------------------------------------------------------------
+library(igvR)
+igv <- igvR()
+setGenome(igv, "hg38")
+showGenomicRegion(igv, "FOXO6")
+
+shoulder <- 1000
+full.region <- with(tbl, sprintf("%s:%d-%d", chrom[1], min(start)-shoulder, max(end)+shoulder))
+showGenomicRegion(igv, full.region)
+track <- DataFrameQuantitativeTrack("GH", tbl[, c("chrom", "start", "end", "combinedscore")], autoscale=FALSE, min=0, max=50)
+displayTrack(igv, track)
 
 
+track <- DataFrameQuantitativeTrack("DLX3", tbl.dlx3[, c("chrom", "motifStart", "motifEnd", "motifRelativeScore")],
+                                    color="darkGreen", autoscale=TRUE)
+displayTrack(igv, track)
+
+track <- DataFrameQuantitativeTrack("DLX3-all", tbl.dlx3.all[, c("chrom", "motifStart", "motifEnd", "motifRelativeScore")],
+                                    color="darkRed", autoscale=TRUE)
+displayTrack(igv, track)
 
