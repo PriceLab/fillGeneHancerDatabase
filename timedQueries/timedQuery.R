@@ -47,7 +47,7 @@ system.time(tbl <- dbGetQuery(db, query))
 tbl$sig <- with(tbl, sprintf("%s:%d-%d", chrom, start, end))
 which(duplicated(tbl$sig))
 tbl <- tbl[-which(duplicated(tbl$sig)),]
-subset(tbl, !(is.nan(eqtl) & is.nan(hic)))
+subset(tbl, !(is.nan(eqtl) & is.nan(hic) & is.nan(erna))
 
 #--------------------------------------------------------------------------------
 #  21 regions.  alison asserts that DLX3 regulates FOXO6.
